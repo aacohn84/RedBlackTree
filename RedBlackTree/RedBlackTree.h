@@ -39,19 +39,19 @@ public:
 	
 	void insert(Key key, Value value) 
 	{
-		root = insert(root, key, value);
+		root = insert(root, key, value, NULL);
 	}
 
-	RedBlackNode* insert(RedBlackNode *t, Key key, Value value)
+	RedBlackNode* insert(RedBlackNode *t, Key key, Value value, RedBlackNode *parent)
 	{
 		if (!t)
-			t = new RedBlackNode(key, value, NULL);
+			t = new RedBlackNode(key, value, parent);
 		else
 		{
 			if (key < t->key)
-				t->left = insert(t->left, key, value);
+				t->left = insert(t->left, key, value, t);
 			else
-				t->right = insert(t->right, key, value);
+				t->right = insert(t->right, key, value, t);
 		}
 		return t;
 	}
@@ -68,4 +68,43 @@ public:
 			delete t;
 		}
 	}
+
+	bool isBinarySearchTree() { return isBinarySearchTree(root); }
+
+	bool isBinarySearchTree(RedBlackNode *t)
+	{
+		bool left_is_binary = true;
+		bool right_is_binary = true;
+	
+		if (t->left)
+		{
+			if (t->left->value < t->value)
+				left_is_binary = isBinarySearchTree(t->left);
+			else
+				left_is_binary = false;
+		}
+		if (t->right)
+		{
+			if (t->right->value > t->value)
+				right_is_binary = isBinarySearchTree(t->right);
+			else
+				right_is_binary = false;
+		}
+		return (left_is_binary && right_is_binary);
+	}
+
+	bool isConnectedTree() { return isConnectedTree(root, NULL); }
+
+	bool isConnectedTree(RedBlackNode *t, RedBlackNode *parent)
+	{
+		if (t)
+		{
+			if (parent != NULL && t->parent != parent)
+				return false;
+
+			return isConnectedTree(t->left, t) && isConnectedTree(t->right, t);
+		}
+		return true;
+	}
+
 };
