@@ -14,13 +14,14 @@ int main()
 	tree.insert(7, 6.0);
 	tree.insert(-1, -2.0);
 
-	bool is_binary = tree.isBinarySearchTree();
-	bool is_connected = tree.isConnectedTree();
+	bool is_binary = tree.isBinary();
+	bool is_connected = tree.isConnected();
 
 	if (is_binary)
 		cout << "Tree is binary." << endl;
 	if (is_connected)
 		cout << "Tree is connected." << endl;
+	cout << tree.depth() << endl;
 
 	return 0;
 	// create red-black tree
