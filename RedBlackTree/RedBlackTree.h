@@ -16,13 +16,50 @@ private:
 		Key key;
 		Value value;
 		RedBlackNode *left, *right, *parent;
-		bool isRed, isLeaf;
-		int blackHeight;
-
+		bool isBlack;
+		
 		RedBlackNode(Key key, Value value, RedBlackNode *parent)
-			: key(key), value(value), isRed(true), isLeaf(true),
+			: key(key), value(value), isBlack(false),
 			left(NULL), right(NULL), parent(parent)
 		{
+		}
+
+		RedBlackNode* grandparent()
+		{
+			return parent->parent;
+		}
+		
+		RedBlackNode* uncle()
+		{
+			return (this == grandparent()->left ? parent->right : parent->left);
+		}
+
+		void rotateLeft()
+		{
+			// the right node becomes this node's parent
+			right->parent = parent;
+			parent = right;
+
+			// the right node is replaced by its left child
+			right = right->left;
+			right->parent = this;
+
+			// the new parent now has this node as its left child
+			parent->left = this;
+		}
+		
+		void rotateRight()
+		{
+			// the left node becomes this node's parent
+			left->parent = parent;
+			parent = left;
+
+			// the left node is replaced by its right child
+			left = left->right;
+			left->parent = this;
+
+			// the new parent now has this node as its right child
+			parent->right = this;
 		}
 	};
 
@@ -65,28 +102,73 @@ public:
 		else
 			(left ? parent->left : parent->right) = newNode;
 
-		root = insert(root, key, value, NULL);
+		insertCase1(newNode);
 	}
 
-	RedBlackNode* insert(RedBlackNode *t, Key key, Value value, RedBlackNode *parent)
+	// case 1: inserted at the root
+	void insertCase1(RedBlackNode *n)
 	{
-		if (!t)
-			t = new RedBlackNode(key, value, parent);
+		if (n == root)
+			n->isBlack = true;
 		else
-		{
-			if (key < t->key)
-				t->left = insert(t->left, key, value, t);
-			else
-				t->right = insert(t->right, key, value, t);
-		}
-		return t;
+			insertCase2(n);
 	}
 
-	void insert_case1();
-	void insert_case2();
-	void insert_case3();
-	void insert_case4();
-	void insert_case5();
+	// case 2: parent is black, do nothing
+	void insertCase2(RedBlackNode *n)
+	{
+		if (n->parent->isBlack)
+			return;
+		else
+			insertCase3(n);
+	}
+
+	// case 3: parent and uncle are red
+	void insertCase3(RedBlackNode *n)
+	{
+		RedBlackNode *u = n->uncle();
+		if (u != NULL && !u->isBlack)
+		{
+			n->parent->isBlack = true;
+			u->isBlack = true;
+			RedBlackNode *g = n->grandparent();
+			g->isBlack = false;
+			insertCase1(g);
+		}
+		else
+			insertCase4(n);
+	}
+
+	// parent is red, uncle is black, path from n to g is not straight
+	void insertCase4(RedBlackNode *n)
+	{
+		RedBlackNode *g = n->grandparent();
+		if (n == n->parent->right && n->parent == g->left)
+		{
+			n->parent->rotateLeft();
+			n = n->left;
+		}
+		else if (n == n->parent->left && n->parent == g->right)
+		{
+			n->parent->rotateRight();
+			n = n->right;
+		}
+		insertCase5(n);
+	}
+
+	// parent is red, uncle is black, path from n to g is straight
+	void insertCase5(RedBlackNode *n)
+	{
+		RedBlackNode *g = n->grandparent();
+		n->parent->isBlack = true;
+		if (n == n->parent->left)
+			g->rotateRight();
+		else
+			g->rotateLeft();
+
+		if (g == root)
+			root = g->parent;
+	}
 
 	void remove(Key key) 
 	{
@@ -107,120 +189,6 @@ public:
 			deleteTree(t->right);
 			delete t;
 		}
-	}
-
-	void rotation_RR(RedBlackNode *root)
-	{
-		// right heavy tree
-		// right child takes the place of root
-		// nodes shift to the left
-
-		// hold onto nodes which might be axed during rotation
-		RedBlackNode *old_left = root->left;
-		RedBlackNode *pivot = root->right;
-		RedBlackNode *pivot_left = pivot->left;
-
-		// reassign pivot to root->left, reattach old left
-		root->left = pivot;
-		root->left->left = old_left;
-		if (old_left)
-			old_left->parent = root->left;
-
-		// reassign pivot->right to root->right
-		root->right = pivot->right;
-		root->right->parent = root;
-
-		// pivot's left child goes to root->left->right
-		root->left->right = pivot_left;
-
-		// swap values between the root and the left child
-		util::swap(&(root->left->value), &(root->value), sizeof(root->value));
-	}
-
-	void rotation_LL(RedBlackNode *root)
-	{
-		// hold onto nodes which might be axed during rotation
-		RedBlackNode *old_right = root->right;
-		RedBlackNode *pivot = root->left;
-		RedBlackNode *pivot_right = pivot->right;
-
-		// reassign pivot to root->left, reattach old left
-		root->right = pivot;
-		root->right->right = old_right;
-		if (old_right)
-			old_right->parent = root->right;
-
-		// reassign pivot->right to root->right
-		root->left = pivot->left;
-		root->left->parent = root;
-
-		// pivot's left child goes to root->left->right
-		root->right->left = pivot_right;
-
-		// swap values between the root and the right child
-		util::swap(&(root->right->value), &(root->value), sizeof(int));
-	}
-
-	void rotation_RL(RedBlackNode *root)
-	{
-		// set the pivot, hang onto nodes that might get lost
-		RedBlackNode *pivot = root->right;
-		RedBlackNode *old_left = root->left;
-		RedBlackNode *pivot_left_left = pivot->left->left;
-		RedBlackNode *pivot_left_right = pivot->left->right;
-	
-		// the left of the pivot becomes the left of the root
-		root->left = pivot->left;
-		root->left->parent = root;
-	
-		// if the left of the pivot had a left child, it goes right of root->left
-		root->left->right = pivot_left_left;
-		if (root->left->right)
-			root->left->right->parent = root->left;
-
-		// if the left of the pivot had a right child, it goes left of the pivot
-		pivot->left = pivot_left_right;
-		if (pivot->left)
-			pivot->left->parent = pivot;
-
-		// restore old left of root
-		root->left->left = old_left;
-		if (old_left)
-			old_left->parent = root->left;
-
-		// swap values between the root and the left child
-		util::swap(&(root->left->value), &root->value, sizeof(int));
-	}
-
-	void rotation_LR(RedBlackNode *root)
-	{
-		// set the pivot, hang onto nodes that might get lost
-		RedBlackNode *pivot = root->left;
-		RedBlackNode *old_right = root->right;
-		RedBlackNode *pivot_right_right = pivot->right->right;
-		RedBlackNode *pivot_right_left = pivot->right->left;
-	
-		// the right of the pivot becomes the right of the root
-		root->right = pivot->right;
-		root->right->parent = root;
-
-		// if the right of the pivot had a right child, it goes left of root->right
-		root->right->left = pivot_right_right;
-		if (root->right->left)
-			root->right->left->parent = root->right;
-
-		// if the right of the pivot had a left child, it goes right of the pivot
-		pivot->right = pivot_right_left;
-		if (pivot->right)
-			pivot->right->parent = pivot;
-
-		// restore old left of root
-		root->right->right = old_right;
-		if (old_right)
-			old_right->parent = root->right;
-
-		// swap values between the root and the left child
-		util::swap(&(root->right->value), &root->value, sizeof(int));
 	}
 
 	bool isBinary() { return isBinary(root); }
