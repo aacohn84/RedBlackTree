@@ -1,5 +1,7 @@
 #pragma once
 
+#include "util.h" // util::swap
+
 #ifndef NULL
 	#define NULL 0
 #endif
@@ -39,6 +41,30 @@ public:
 	
 	void insert(Key key, Value value) 
 	{
+		RedBlackNode *iter = root;
+		RedBlackNode *parent = NULL;
+		bool left = false;
+		while (iter)
+		{
+			parent = iter;
+			if (key < iter->key)
+			{
+				iter = iter->left;
+				left = true;
+			}
+			else
+			{
+				iter = iter->right;
+				left = false;
+			}
+		}
+		
+		RedBlackNode *newNode = new RedBlackNode(key, value, parent);
+		if (!parent)
+			root = newNode;
+		else
+			(left ? parent->left : parent->right) = newNode;
+
 		root = insert(root, key, value, NULL);
 	}
 
@@ -55,6 +81,12 @@ public:
 		}
 		return t;
 	}
+
+	void insert_case1();
+	void insert_case2();
+	void insert_case3();
+	void insert_case4();
+	void insert_case5();
 
 	void remove(Key key) 
 	{
@@ -101,8 +133,8 @@ public:
 		// pivot's left child goes to root->left->right
 		root->left->right = pivot_left;
 
-		swap(&(root->left->value), &(root->value), sizeof(root->value));
-		// pivot->left becomes root->left->max??
+		// swap values between the root and the left child
+		util::swap(&(root->left->value), &(root->value), sizeof(root->value));
 	}
 
 	void rotation_LL(RedBlackNode *root)
@@ -125,8 +157,8 @@ public:
 		// pivot's left child goes to root->left->right
 		root->right->left = pivot_right;
 
-		swap(&(root->right->value), &(root->value), sizeof(int));
-		// pivot->left becomes root->right->max??
+		// swap values between the root and the right child
+		util::swap(&(root->right->value), &(root->value), sizeof(int));
 	}
 
 	void rotation_RL(RedBlackNode *root)
@@ -157,7 +189,7 @@ public:
 			old_left->parent = root->left;
 
 		// swap values between the root and the left child
-		swap(&(root->left->value), &root->value, sizeof(int));
+		util::swap(&(root->left->value), &root->value, sizeof(int));
 	}
 
 	void rotation_LR(RedBlackNode *root)
@@ -188,7 +220,7 @@ public:
 			old_right->parent = root->right;
 
 		// swap values between the root and the left child
-		swap(&(root->right->value), &root->value, sizeof(int));
+		util::swap(&(root->right->value), &root->value, sizeof(int));
 	}
 
 	bool isBinary() { return isBinary(root); }
@@ -242,5 +274,4 @@ public:
 		}
 		return -1;
 	}
-
 };
