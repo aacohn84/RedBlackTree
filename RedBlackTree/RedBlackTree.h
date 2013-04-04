@@ -191,7 +191,48 @@ public:
 		}
 	}
 
-	bool isRedBlackTree() { return isRedBlackTree(root) && root->isBlack; }
+	bool isRedBlackTree() 
+	{ 
+		bool p2 = checkProperty2();
+		bool p4 = checkProperty4();
+		bool p5 = checkProperty5();
+
+		return p2 && p4 && p5;
+	}
+
+	bool checkProperty2()
+	{
+		// root must be black
+		return root->isBlack;
+	}
+
+	bool checkProperty4()
+	{
+		// if a node is red, it's children must be black
+		bool inViolation = false;
+		checkProperty4(root, inViolation);
+		return inViolation;
+	}
+
+	void checkProperty4(RedBlackNode *t, bool &inViolation)
+	{
+		if (!inViolation && t)
+		{
+			if (!t->isBlack)
+			{	
+				bool hasRedChild = t->left && !t->left->isBlack;
+				hasRedChild |=  t->right && !t->right->isBlack;
+				if (hasRedChild)
+				{	// t is red and has at least 1 red child
+					inViolation = true;
+					return;
+				}
+			}
+			// no errors yet, continue checking
+			checkProperty4(t->left, inViolation);
+			checkProperty4(t->right, inViolation);
+		}
+	}
 
 	bool isRedBlackTree(RedBlackNode *t)
 	{
@@ -206,13 +247,7 @@ public:
 		}
 
 		// All simple paths to descendent leaves contain the same # of black nodes
-		if (!hasOneBlackHeight(t->left) || !hasOneBlackHeight(t->right))
-			return false;
-	}
-
-	bool hasOneBlackHeight(RedBlackNode *t)
-	{	
-		return blackHeight(t) != -1;
+		if (blackHeight(t) 
 	}
 
 	int blackHeight(RedBlackNode *t)
