@@ -42,7 +42,8 @@ private:
 
 			// the right node is replaced by its left child
 			right = right->left;
-			right->parent = this;
+			if (right)
+				right->parent = this;
 
 			// the new parent now has this node as its left child
 			parent->left = this;
@@ -56,7 +57,8 @@ private:
 
 			// the left node is replaced by its right child
 			left = left->right;
-			left->parent = this;
+			if (left)
+				left->parent = this;
 
 			// the new parent now has this node as its right child
 			parent->right = this;
@@ -234,20 +236,27 @@ public:
 		}
 	}
 
-	bool isRedBlackTree(RedBlackNode *t)
+	bool checkProperty5()
 	{
-		// If a node is red, then its children are black
-		if (!t->isBlack)
-		{
-			if (t->left && !t->left->isBlack)
-				return false;
-			
-			if (t->right && !t->right->isBlack)
-				return false;
-		}
+		// For each node, all simple paths from the node to descendent leaves contain
+		// the same number of black nodes
+		bool inViolation = false;
+		checkProperty5(root, inViolation);
+		return inViolation;
+	}
 
-		// All simple paths to descendent leaves contain the same # of black nodes
-		if (blackHeight(t) 
+	void checkProperty5(RedBlackNode *t, bool &inViolation)
+	{
+		if (!inViolation && t)
+		{
+			if (blackHeight(t) != -1)
+			{
+				checkProperty5(t->left, inViolation);
+				checkProperty5(t->right, inViolation);
+			}
+			else
+				inViolation = true;
+		}
 	}
 
 	int blackHeight(RedBlackNode *t)
