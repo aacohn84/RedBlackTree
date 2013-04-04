@@ -191,6 +191,54 @@ public:
 		}
 	}
 
+	bool isRedBlackTree() { return isRedBlackTree(root) && root->isBlack; }
+
+	bool isRedBlackTree(RedBlackNode *t)
+	{
+		// If a node is red, then its children are black
+		if (!t->isBlack)
+		{
+			if (t->left && !t->left->isBlack)
+				return false;
+			
+			if (t->right && !t->right->isBlack)
+				return false;
+		}
+
+		// All simple paths to descendent leaves contain the same # of black nodes
+		if (!hasOneBlackHeight(t->left) || !hasOneBlackHeight(t->right))
+			return false;
+	}
+
+	bool hasOneBlackHeight(RedBlackNode *t)
+	{	
+		return blackHeight(t) != -1;
+	}
+
+	int blackHeight(RedBlackNode *t)
+	{
+		if (t)
+		{
+			int bhl = blackHeight(t->left);
+			int bhr = blackHeight(t->right);
+			if (bhl == -1 || bhr == -1)
+				return -1;
+			else 
+			{
+				if (!t->left || t->left->isBlack)
+					bhl += 1;
+				if (!t->right || t->right->isBlack)
+					bhr += 1;
+
+				if (bhl == bhr)
+					return bhl;
+				else
+					return -1;
+			}
+		}
+		return 0;
+	}
+
 	bool isBinary() { return isBinary(root); }
 
 	bool isBinary(RedBlackNode *t)
