@@ -31,12 +31,17 @@ private:
 		
 		RedBlackNode* uncle()
 		{
-			return (this == grandparent()->left ? parent->right : parent->left);
+			RedBlackNode *g = grandparent();
+			return (parent == g->left ? g->right : g->left);
 		}
 
 		void rotateLeft()
 		{
 			// the right node becomes this node's parent
+			if (this == parent->left)
+				parent->left = right;
+			else
+				parent->right = right;
 			right->parent = parent;
 			parent = right;
 
@@ -52,6 +57,10 @@ private:
 		void rotateRight()
 		{
 			// the left node becomes this node's parent
+			if (this == parent->right)
+				parent->right = left;
+			else
+				parent->left = left;
 			left->parent = parent;
 			parent = left;
 
