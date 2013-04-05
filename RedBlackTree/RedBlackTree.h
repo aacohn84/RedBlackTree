@@ -222,7 +222,7 @@ public:
 		// if a node is red, it's children must be black
 		bool inViolation = false;
 		checkProperty4(root, inViolation);
-		return inViolation;
+		return !inViolation;
 	}
 
 	void checkProperty4(RedBlackNode *t, bool &inViolation)
@@ -251,7 +251,7 @@ public:
 		// the same number of black nodes
 		bool inViolation = false;
 		checkProperty5(root, inViolation);
-		return inViolation;
+		return !inViolation;
 	}
 
 	void checkProperty5(RedBlackNode *t, bool &inViolation)

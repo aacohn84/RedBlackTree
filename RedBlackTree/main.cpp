@@ -16,16 +16,12 @@ int main()
 
 	bool is_binary = tree.isBinary();
 	bool is_connected = tree.isConnected();
+	bool is_redblack = tree.isRedBlackTree();
 
-	if (is_binary)
-		cout << "Tree is binary." << endl;
-	if (is_connected)
-		cout << "Tree is connected." << endl;
+	cout << "Tree is " << (is_binary ? "" : "not ") << "binary." << endl;
+	cout << "Tree is " << (is_connected ? "" : "not ") << "connected." << endl;
+	cout << "Tree is " << (is_redblack ? "" : "not ") << "redblack." << endl;
 	cout << tree.depth() << endl;
 
 	return 0;
-	// create red-black tree
-	// while inserting random values into tree...
-	//   test red-black properties
-	// delete the tree
 }
