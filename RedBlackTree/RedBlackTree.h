@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util.h" // util::swap
+#include <exception>
 
 #ifndef NULL
 	#define NULL 0
@@ -38,10 +39,13 @@ private:
 		void rotateLeft()
 		{
 			// the right node becomes this node's parent
-			if (this == parent->left)
-				parent->left = right;
-			else
-				parent->right = right;
+			if (parent)
+			{
+				if (this == parent->left)
+					parent->left = right;
+				else
+					parent->right = right;
+			}
 			right->parent = parent;
 			parent = right;
 
@@ -57,10 +61,13 @@ private:
 		void rotateRight()
 		{
 			// the left node becomes this node's parent
-			if (this == parent->right)
-				parent->right = left;
-			else
-				parent->left = left;
+			if (parent)
+			{
+				if (this == parent->right)
+					parent->right = left;
+				else
+					parent->left = left;
+			}
 			left->parent = parent;
 			parent = left;
 
@@ -100,11 +107,13 @@ public:
 				iter = iter->left;
 				left = true;
 			}
-			else
+			else if (key > iter->key)
 			{
 				iter = iter->right;
 				left = false;
 			}
+			else
+				throw std::exception("Key already in tree.");
 		}
 		
 		RedBlackNode *newNode = new RedBlackNode(key, value, parent);
@@ -172,6 +181,7 @@ public:
 	{
 		RedBlackNode *g = n->grandparent();
 		n->parent->isBlack = true;
+		g->isBlack = false;
 		if (n == n->parent->left)
 			g->rotateRight();
 		else
