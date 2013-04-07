@@ -63,10 +63,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RandomInt.cpp" />
     <ClCompile Include="RedBlackTree.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="RandomInt.h" />
     <ClInclude Include="RedBlackTree.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
