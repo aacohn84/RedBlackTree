@@ -25,17 +25,33 @@ private:
 		{
 		}
 
+		/*	Returns the parent of the parent.
+			Pre-cond: Parent must exist.	*/
 		RedBlackNode* grandparent()
 		{
 			return parent->parent;
 		}
 		
+		/*	Returns the parent's sibling.
+			Pre-cond: Grandparent must exist.	*/
 		RedBlackNode* uncle()
 		{
 			RedBlackNode *g = grandparent();
 			return (parent == g->left ? g->right : g->left);
 		}
 
+		/*	Finds and returns the right-most node from the left sub-tree.	*/
+		RedBlackNode* successor()
+		{
+			RedBlackNode *s = this->left;
+			while (s->right)
+				s = s->right;
+			return s;
+		}
+
+		/*	Right child becomes this node's parent, and this node becomes the
+			left child.	
+			Pre-cond: right child must exist.	*/
 		void rotateLeft()
 		{
 			// the right node becomes this node's parent
@@ -58,6 +74,9 @@ private:
 			parent->left = this;
 		}
 		
+		/*	Left child becomes this node's parent, and this node becomes the
+			right child.	
+			Pre-cond: left child must exist.	*/
 		void rotateRight()
 		{
 			// the left node becomes this node's parent
@@ -71,12 +90,12 @@ private:
 			left->parent = parent;
 			parent = left;
 
-			// the left node is replaced by its right child
+			// right child of new parent becomes left child of this node
 			left = left->right;
 			if (left)
 				left->parent = this;
 
-			// the new parent now has this node as its right child
+			// this node becomes the right child of the new parent
 			parent->right = this;
 		}
 	};
@@ -94,8 +113,12 @@ public:
 		deleteTree(root);
 	}
 	
+	/*	Inserts a node with the given key/value into the tree while	maintaining
+		BST and red-black properties. Raises an exception if the key is already
+		in the tree.	*/
 	void insert(Key key, Value value) 
 	{
+		// find the position where the new node will be inserted
 		RedBlackNode *iter = root;
 		RedBlackNode *parent = NULL;
 		bool left = false;
@@ -116,35 +139,37 @@ public:
 				throw std::exception("Key already in tree.");
 		}
 		
+		// create the new node and tie it into the tree
 		RedBlackNode *newNode = new RedBlackNode(key, value, parent);
 		if (!parent)
 			root = newNode;
 		else
 			(left ? parent->left : parent->right) = newNode;
 
-		insertCase1(newNode);
+		// Perform local fixes to maintain red-black properties
+		localFixCase1(newNode);
 	}
 
-	// case 1: inserted at the root
-	void insertCase1(RedBlackNode *n)
+	/*	Inserted at the root	*/
+	void localFixCase1(RedBlackNode *n)
 	{
 		if (n == root)
 			n->isBlack = true;
 		else
-			insertCase2(n);
+			localFixCase2(n);
 	}
 
-	// case 2: parent is black, do nothing
-	void insertCase2(RedBlackNode *n)
+	/*	Parent is black, no problem.	*/
+	void localFixCase2(RedBlackNode *n)
 	{
 		if (n->parent->isBlack)
 			return;
 		else
-			insertCase3(n);
+			localFixCase3(n);
 	}
 
-	// case 3: parent and uncle are red
-	void insertCase3(RedBlackNode *n)
+	/* Parent and uncle are red.	*/
+	void localFixCase3(RedBlackNode *n)
 	{
 		RedBlackNode *u = n->uncle();
 		if (u != NULL && !u->isBlack)
@@ -153,14 +178,14 @@ public:
 			u->isBlack = true;
 			RedBlackNode *g = n->grandparent();
 			g->isBlack = false;
-			insertCase1(g);
+			localFixCase1(g);
 		}
 		else
-			insertCase4(n);
+			localFixCase4(n);
 	}
 
-	// parent is red, uncle is black, path from n to g is not straight
-	void insertCase4(RedBlackNode *n)
+	/* Parent is red, uncle is black, path from n to g is not straight */
+	void localFixCase4(RedBlackNode *n)
 	{
 		RedBlackNode *g = n->grandparent();
 		if (n == n->parent->right && n->parent == g->left)
@@ -173,11 +198,11 @@ public:
 			n->parent->rotateRight();
 			n = n->right;
 		}
-		insertCase5(n);
+		localFixCase5(n);
 	}
 
-	// parent is red, uncle is black, path from n to g is straight
-	void insertCase5(RedBlackNode *n)
+	/* Parent is red, uncle is black, path from n to g is straight */
+	void localFixCase5(RedBlackNode *n)
 	{
 		RedBlackNode *g = n->grandparent();
 		n->parent->isBlack = true;
@@ -191,17 +216,31 @@ public:
 			root = g->parent;
 	}
 
+	/*	Finds and removes the node with the specified key while maintaining the
+		BST and red-black properties of the tree. Raises an exception if the
+		node is not in the tree.	*/
 	void remove(Key key) 
 	{
-		/*
-			find the node to be deleted and its parent
-			replace the node to be deleted by its successor
-			delete the node
-		*/
+		// find the node to be deleted
+		RedBlackNode *mark = root;
+		while (key != mark->key)
+		{
+			if (key < mark->key)
+				mark = mark->left;
+			else
+				mark = mark->right;
+		}
+		if (!mark)
+			throw std::exception("KeyError: key not found in tree.");
+
+		// find successor
+		RedBlackNode *s = mark->successor();
 	}
 
 	Value* find(Key key) {}
 
+	/*	Recursively deallocates every node in the tree using a post-order 
+		traversal.	*/
 	void deleteTree(RedBlackNode *t)
 	{
 		if (t)
@@ -212,30 +251,26 @@ public:
 		}
 	}
 
+	/*	Verifies the red-black properties of the tree. Returns true if all of 
+		the properties are maintained (making this a valid red-black tree).	*/
 	bool isRedBlackTree() 
 	{ 
-		bool p2 = checkProperty2();
-		bool p4 = checkProperty4();
-		bool p5 = checkProperty5();
-
-		return p2 && p4 && p5;
+		return root->isBlack && noSuccessiveReds() && goodBlackHeights();
 	}
 
-	bool checkProperty2()
+	/*	Verifies the "no successive reds" property of the tree: if a node is
+		red, it's children must be black.
+		Returns true if the property is maintained.	*/
+	bool noSuccessiveReds()
 	{
-		// root must be black
-		return root->isBlack;
-	}
-
-	bool checkProperty4()
-	{
-		// if a node is red, it's children must be black
 		bool inViolation = false;
-		checkProperty4(root, inViolation);
+		noSuccessiveReds(root, inViolation);
 		return !inViolation;
 	}
 
-	void checkProperty4(RedBlackNode *t, bool &inViolation)
+	/*	Recursively verifies the "no successive reds" property of the tree.
+		Returns true if the property is violated.	*/
+	void noSuccessiveReds(RedBlackNode *t, bool &inViolation)
 	{
 		if (!inViolation && t)
 		{
@@ -250,34 +285,40 @@ public:
 				}
 			}
 			// no errors yet, continue checking
-			checkProperty4(t->left, inViolation);
-			checkProperty4(t->right, inViolation);
+			noSuccessiveReds(t->left, inViolation);
+			noSuccessiveReds(t->right, inViolation);
 		}
 	}
 
-	bool checkProperty5()
+	/*	Verifies the black height property of the tree: For each node, all 
+		simple paths from the node to descendent leaves contain the same
+		number of black nodes. 
+		Returns true if the property is maintained.	*/
+	bool goodBlackHeights()
 	{
-		// For each node, all simple paths from the node to descendent leaves contain
-		// the same number of black nodes
 		bool inViolation = false;
-		checkProperty5(root, inViolation);
+		goodBlackHeights(root, inViolation);
 		return !inViolation;
 	}
 
-	void checkProperty5(RedBlackNode *t, bool &inViolation)
+	/*	Recursively verifies the black height property of the tree. 
+		Returns true if the property is violated.	*/
+	void goodBlackHeights(RedBlackNode *t, bool &inViolation)
 	{
 		if (!inViolation && t)
 		{
 			if (blackHeight(t) != -1)
 			{
-				checkProperty5(t->left, inViolation);
-				checkProperty5(t->right, inViolation);
+				goodBlackHeights(t->left, inViolation);
+				goodBlackHeights(t->right, inViolation);
 			}
 			else
 				inViolation = true;
 		}
 	}
-
+	
+	/*	Recursively measures the black height of the tree.
+		Returns height if consistent, -1 if not. */
 	int blackHeight(RedBlackNode *t)
 	{
 		if (t)
@@ -302,8 +343,12 @@ public:
 		return 0;
 	}
 
+	/*	Verifies the binary search property of the tree. 
+		Returns true if the property is maintained.	*/
 	bool isBinary() { return isBinary(root); }
 
+	/*	Recursively verifies the binary search property of the tree. 
+		Returns true of the property is maintained.	*/
 	bool isBinary(RedBlackNode *t)
 	{
 		bool left_is_binary = true;
@@ -326,8 +371,13 @@ public:
 		return (left_is_binary && right_is_binary);
 	}
 
+	/*	Verifies the "connectedness" of the tree. That is, every child points 
+		back to its parent. 
+		Returns true if every node points back to its parent.	*/
 	bool isConnected() { return isConnected(root, NULL); }
 
+	/*	Verifies the "connectedness" of the tree.
+		Returns true if every node points back to its parent.	*/
 	bool isConnected(RedBlackNode *t, RedBlackNode *parent)
 	{
 		if (t)
@@ -340,8 +390,12 @@ public:
 		return true;
 	}
 
+	/*	Returns the depth of the tree. A tree of depth zero has one node. A 
+		tree of depth -1 is empty.	*/
 	int depth() { return depth(root); }
 
+	/*	Recursively measures the depth of the tree.
+		Returns the depth of the tree.	*/
 	int depth(RedBlackNode *t)
 	{
 		if (t)
