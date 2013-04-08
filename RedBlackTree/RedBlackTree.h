@@ -40,28 +40,24 @@ private:
 			return (parent == g->left ? g->right : g->left);
 		}
 
-		/*	Finds and returns the left-most node from the right sub-tree.	*/
+		/*	Finds and returns the left-most node from the right sub-tree.
+			Pre-cond: right child must exist.	*/
 		RedBlackNode* successor()
 		{
 			RedBlackNode *s = this->right;
 			
-			if (!s)
-				return NULL;
-
 			while (s->left)
 				s = s->left;
 
 			return s;
 		}
 
-		/*	Finds and returns the right-most node from the left sub-tree.	*/
+		/*	Finds and returns the right-most node from the left sub-tree.
+			Pre-cond: left child must exist.	*/
 		RedBlackNode *predecessor()
 		{
 			RedBlackNode *s = this->left;
 			
-			if (!s)
-				return NULL;
-
 			while (s->right)
 				s = s->right;
 
@@ -249,12 +245,28 @@ public:
 			else
 				mark = mark->right;
 		}
+		
 		if (!mark)
 			throw std::exception("KeyError: key not found in tree.");
 
-		// find successor
-		RedBlackNode *s = mark->successor();
-
+		if (!mark->left && !mark->right)
+		{	// mark is a leaf
+			RedBlackNode *p = mark->parent;
+			if (p)
+				(mark == p->left ? p->left : p->right) = NULL;
+			delete mark;
+		}
+		else if (mark->left && mark->right)
+		{	// mark has two children
+			RedBlackNode *r = mark->successor();
+			util::swap(&mark->key, &r->key, sizeof(Key));
+			util::swap(&mark->value, &r->value, sizeof(Value));
+			r->parent->right = r->left;
+			if (r->left)
+				r->left->parent = r->parent;
+		}
+		// mark has one child
+		// replace mark with its successor or predecessor
 	}
 
 	Value* find(Key key) {}
