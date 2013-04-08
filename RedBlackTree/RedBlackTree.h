@@ -266,7 +266,26 @@ public:
 				r->left->parent = r->parent;
 		}
 		// mark has one child
-		// replace mark with its successor or predecessor
+		else if (mark->left)
+		{
+			RedBlackNode *p = mark->parent;
+			if (p)
+				(mark == p->left ? p->left : p->right) = mark->left;
+			else
+				root = mark->left;
+			mark->left->parent = p;
+			delete mark;
+		}
+		else
+		{
+			RedBlackNode *p = mark->parent;
+			if (p)
+				(mark == p->left ? p->left : p->right) = mark->right;
+			else
+				root = mark->right;
+			mark->right->parent = p;
+			delete mark;
+		}
 	}
 
 	Value* find(Key key) {}
