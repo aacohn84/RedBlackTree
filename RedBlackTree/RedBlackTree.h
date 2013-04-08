@@ -40,12 +40,31 @@ private:
 			return (parent == g->left ? g->right : g->left);
 		}
 
-		/*	Finds and returns the right-most node from the left sub-tree.	*/
+		/*	Finds and returns the left-most node from the right sub-tree.	*/
 		RedBlackNode* successor()
 		{
+			RedBlackNode *s = this->right;
+			
+			if (!s)
+				return NULL;
+
+			while (s->left)
+				s = s->left;
+
+			return s;
+		}
+
+		/*	Finds and returns the right-most node from the left sub-tree.	*/
+		RedBlackNode *predecessor()
+		{
 			RedBlackNode *s = this->left;
+			
+			if (!s)
+				return NULL;
+
 			while (s->right)
 				s = s->right;
+
 			return s;
 		}
 
@@ -235,6 +254,7 @@ public:
 
 		// find successor
 		RedBlackNode *s = mark->successor();
+
 	}
 
 	Value* find(Key key) {}
