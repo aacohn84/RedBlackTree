@@ -113,6 +113,21 @@ private:
 			// this node becomes the right child of the new parent
 			parent->right = this;
 		}
+
+		/*	out node is replaced by in node. out node is deleted. 
+			in may be a NULL pointer.	*/
+		static void transplant(RedBlackNode *out, RedBlackNode *in)
+		{
+			RedBlackNode *p = out->parent;
+
+			if (p)
+				(out == p->left ? p->left : p->right) = in;
+
+			if (in)
+				in->parent = p;
+			
+			delete out;
+		}
 	};
 
 public:
@@ -249,42 +264,38 @@ public:
 		if (!mark)
 			throw std::exception("KeyError: key not found in tree.");
 
-		if (!mark->left && !mark->right)
-		{	// mark is a leaf
-			RedBlackNode *p = mark->parent;
-			if (p)
-				(mark == p->left ? p->left : p->right) = NULL;
-			delete mark;
-		}
-		else if (mark->left && mark->right)
-		{	// mark has two children
-			RedBlackNode *r = mark->successor();
-			util::swap(&mark->key, &r->key, sizeof(Key));
-			util::swap(&mark->value, &r->value, sizeof(Value));
-			r->parent->right = r->left;
-			if (r->left)
-				r->left->parent = r->parent;
-		}
-		// mark has one child
-		else if (mark->left)
-		{
-			RedBlackNode *p = mark->parent;
-			if (p)
-				(mark == p->left ? p->left : p->right) = mark->left;
-			else
-				root = mark->left;
-			mark->left->parent = p;
-			delete mark;
-		}
+		if (!mark->left)
+			// replace mark with its right child, which may be NULL
+			RedBlackNode::transplant(mark, mark->right);
+		else if (!mark->right)
+			// replace mark with its left child
+			RedBlackNode::transplant(mark, mark->left);
 		else
-		{
-			RedBlackNode *p = mark->parent;
-			if (p)
-				(mark == p->left ? p->left : p->right) = mark->right;
+		{	// mark has two children
+			RedBlackNode *s = mark->successor();
+			
+			// replace mark's data with successor's data
+			mark->key = s->key;
+			mark->value = s->value;
+
+			if (s->right)
+			{
+				if (s == mark->right)
+				{	// s is mark's right child. s->right takes its place.
+					mark->right = s->right;
+					mark->right->parent = mark;
+				}
+				else
+				{	// s is some node's left child, s->right takes its place.
+					s->parent->left = s->right;
+					s->right->parent = s->parent;
+				}
+			}
 			else
-				root = mark->right;
-			mark->right->parent = p;
-			delete mark;
+				// successor is a leaf node
+				(s == s->parent->left ? s->parent->left : s->parent->right) = NULL;
+
+			delete s;
 		}
 	}
 
