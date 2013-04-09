@@ -278,6 +278,7 @@ public:
 			mark->key = s->key;
 			mark->value = s->value;
 
+			// replace s with its right child, which may be NULL
 			RedBlackNode::transplant(s, s->right);
 		}
 	}
