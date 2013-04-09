@@ -52,18 +52,6 @@ private:
 			return s;
 		}
 
-		/*	Finds and returns the right-most node from the left sub-tree.
-			Pre-cond: left child must exist.	*/
-		RedBlackNode *predecessor()
-		{
-			RedBlackNode *s = this->left;
-			
-			while (s->right)
-				s = s->right;
-
-			return s;
-		}
-
 		/*	Right child becomes this node's parent, and this node becomes the
 			left child.	
 			Pre-cond: right child must exist.	*/
