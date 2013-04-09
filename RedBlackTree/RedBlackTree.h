@@ -116,6 +116,16 @@ private:
 
 		/*	out node is replaced by in node. out node is deleted. 
 			in may be a NULL pointer.	*/
+		void replaceWith(RedBlackNode *in)
+		{
+			if (parent)
+				(this == parent->left ? parent->left : parent->right) = in;
+
+			if (in)
+				in->parent = parent;
+		}
+		/*	out node is replaced by in node. out node is deleted. 
+			in may be a NULL pointer.	*/
 		static void transplant(RedBlackNode *out, RedBlackNode *in)
 		{
 			RedBlackNode *p = out->parent;
@@ -265,11 +275,15 @@ public:
 			throw std::exception("KeyError: key not found in tree.");
 
 		if (!mark->left)
-			// replace mark with its right child, which may be NULL
-			RedBlackNode::transplant(mark, mark->right);
+		{	// mark might have a right child
+			mark->replaceWith(mark->right);
+			delete mark;
+		}
 		else if (!mark->right)
-			// replace mark with its left child
-			RedBlackNode::transplant(mark, mark->left);
+		{	// mark definitely has a left child
+			mark->replaceWith(mark->left);
+			delete mark;
+		}
 		else
 		{	// mark has two children
 			RedBlackNode *s = mark->successor();
@@ -278,8 +292,8 @@ public:
 			mark->key = s->key;
 			mark->value = s->value;
 
-			// replace s with its right child, which may be NULL
-			RedBlackNode::transplant(s, s->right);
+			s->replaceWith(s->right);
+			delete s;
 		}
 	}
 
