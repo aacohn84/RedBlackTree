@@ -278,24 +278,7 @@ public:
 			mark->key = s->key;
 			mark->value = s->value;
 
-			if (s->right)
-			{
-				if (s == mark->right)
-				{	// s is mark's right child. s->right takes its place.
-					mark->right = s->right;
-					mark->right->parent = mark;
-				}
-				else
-				{	// s is some node's left child, s->right takes its place.
-					s->parent->left = s->right;
-					s->right->parent = s->parent;
-				}
-			}
-			else
-				// successor is a leaf node
-				(s == s->parent->left ? s->parent->left : s->parent->right) = NULL;
-
-			delete s;
+			RedBlackNode::transplant(s, s->right);
 		}
 	}
 
