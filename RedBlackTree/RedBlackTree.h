@@ -102,15 +102,14 @@ private:
 			parent->right = this;
 		}
 
-		/*	out node is replaced by in node. out node is deleted. 
-			in may be a NULL pointer.	*/
-		void replaceWith(RedBlackNode *in)
+		/*	This node is replaced by n, which may be a NULL pointer.	*/
+		void replaceWith(RedBlackNode *n)
 		{
 			if (parent)
-				(this == parent->left ? parent->left : parent->right) = in;
+				(this == parent->left ? parent->left : parent->right) = n;
 
-			if (in)
-				in->parent = parent;
+			if (n)
+				n->parent = parent;
 		}
 		/*	out node is replaced by in node. out node is deleted. 
 			in may be a NULL pointer.	*/
