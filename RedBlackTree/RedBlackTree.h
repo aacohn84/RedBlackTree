@@ -111,20 +111,6 @@ private:
 			if (n)
 				n->parent = parent;
 		}
-		/*	out node is replaced by in node. out node is deleted. 
-			in may be a NULL pointer.	*/
-		static void transplant(RedBlackNode *out, RedBlackNode *in)
-		{
-			RedBlackNode *p = out->parent;
-
-			if (p)
-				(out == p->left ? p->left : p->right) = in;
-
-			if (in)
-				in->parent = p;
-			
-			delete out;
-		}
 	};
 
 public:
