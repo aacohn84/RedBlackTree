@@ -121,10 +121,7 @@ public:
 	{
 	}
 	
-	~RedBlackTree()
-	{
-		deleteTree(root);
-	}
+	~RedBlackTree() { deleteTree(root);	}
 	
 	/*	Inserts a node with the given key/value into the tree while	maintaining
 		BST and red-black properties. Raises an exception if the key is already
@@ -243,11 +240,15 @@ public:
 			else
 				mark = mark->right;
 		}
-		
+		remove(mark);
+	}
+
+	void remove(RedBlackNode *mark)
+	{
 		if (!mark)
 			throw std::exception("KeyError: key not found in tree.");
 
-		if (!mark->left)
+		if (!mark->left) // TODO: fix for case when node to delete is root
 		{	// mark might have a right child
 			mark->replaceWith(mark->right);
 			delete mark;
@@ -265,12 +266,18 @@ public:
 			mark->key = s->key;
 			mark->value = s->value;
 
-			s->replaceWith(s->right);
-			delete s;
+			// remove successor
+			remove(s);
 		}
 	}
 
 	Value* find(Key key) {}
+
+	void clear()
+	{
+		deleteTree(root);
+		root = NULL;
+	}
 
 	/*	Recursively deallocates every node in the tree using a post-order 
 		traversal.	*/
@@ -384,24 +391,16 @@ public:
 		Returns true of the property is maintained.	*/
 	bool isBinary(RedBlackNode *t)
 	{
-		bool left_is_binary = true;
-		bool right_is_binary = true;
-	
-		if (t->left)
+		if (t)
 		{
-			if (t->left->value < t->value)
-				left_is_binary = isBinary(t->left);
+			bool left_lt = !t->left || t->left && t->left->key < t->key;
+			bool right_gt = !t->right || t->right && t->right->key > t->key;
+			if (left_lt && right_gt)
+				return isBinary(t->left) && isBinary(t->right);
 			else
-				left_is_binary = false;
+				return false;
 		}
-		if (t->right)
-		{
-			if (t->right->value > t->value)
-				right_is_binary = isBinary(t->right);
-			else
-				right_is_binary = false;
-		}
-		return (left_is_binary && right_is_binary);
+		return true;
 	}
 
 	/*	Verifies the "connectedness" of the tree. That is, every child points 
