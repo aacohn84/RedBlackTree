@@ -14,37 +14,46 @@ private:
 	class RedBlackNode
 	{
 	public:
+		typedef RedBlackNode* Ptr;
+
 		Key key;
 		Value value;
-		RedBlackNode *left, *right, *parent;
+		Ptr left, right, parent;
 		bool isBlack;
 		
-		RedBlackNode(Key key, Value value, RedBlackNode *parent)
+		RedBlackNode(Key key, Value value, Ptr parent)
 			: key(key), value(value), isBlack(false),
 			left(NULL), right(NULL), parent(parent)
 		{
 		}
 
+		/*	Returns a reference to the parent's pointer to this node.
+			Pre-cond: Parent must exist.	*/
+		Ptr& ptrFromParent() const
+		{
+			return (this == parent->left ? parent->left : parent->right);
+		}
+
 		/*	Returns the parent of the parent.
 			Pre-cond: Parent must exist.	*/
-		RedBlackNode* grandparent()
+		Ptr grandparent() const
 		{
 			return parent->parent;
 		}
 		
 		/*	Returns the parent's sibling.
 			Pre-cond: Grandparent must exist.	*/
-		RedBlackNode* uncle()
+		Ptr uncle() const
 		{
-			RedBlackNode *g = grandparent();
+			Ptr g = grandparent();
 			return (parent == g->left ? g->right : g->left);
 		}
 
 		/*	Finds and returns the left-most node from the right sub-tree.
 			Pre-cond: right child must exist.	*/
-		RedBlackNode* successor()
+		Ptr successor() const
 		{
-			RedBlackNode *s = this->right;
+			Ptr s = this->right;
 			
 			while (s->left)
 				s = s->left;
@@ -57,23 +66,20 @@ private:
 			Pre-cond: right child must exist.	*/
 		void rotateLeft()
 		{
-			// the right node becomes this node's parent
+			// right child is promoted to this node's position in the tree
 			if (parent)
-			{
-				if (this == parent->left)
-					parent->left = right;
-				else
-					parent->right = right;
-			}
+				ptrFromParent() = right;
+
+			// this node is demoted, its parent is now its former right child
 			right->parent = parent;
 			parent = right;
 
-			// the right node is replaced by its left child
-			right = right->left;
+			// the new parent gives its left child to this node
+			right = parent->left;
 			if (right)
 				right->parent = this;
 
-			// the new parent now has this node as its left child
+			// this node becomes the left child of its new parent
 			parent->left = this;
 		}
 		
@@ -82,32 +88,29 @@ private:
 			Pre-cond: left child must exist.	*/
 		void rotateRight()
 		{
-			// the left node becomes this node's parent
+			// left child is promoted to this node's position in the tree
 			if (parent)
-			{
-				if (this == parent->right)
-					parent->right = left;
-				else
-					parent->left = left;
-			}
+				ptrFromParent() = left;
+
+			// this node is demoted, its parent is now its former left child
 			left->parent = parent;
 			parent = left;
 
-			// right child of new parent becomes left child of this node
-			left = left->right;
+			// the new parent gives its right child to this node
+			left = parent->right;
 			if (left)
 				left->parent = this;
 
-			// this node becomes the right child of the new parent
+			// this node becomes the right child of its new parent
 			parent->right = this;
 		}
 
 		/*	This node is replaced by n, which may be a NULL pointer.	*/
-		void replaceWith(RedBlackNode *n)
+		void replaceWith(Ptr n) const
 		{
-			if (parent)
-				(this == parent->left ? parent->left : parent->right) = n;
-
+			if (parent) 
+				// n takes this node's place as its parent's left or right child
+				ptrFromParent() = n;
 			if (n)
 				n->parent = parent;
 		}
@@ -240,17 +243,24 @@ public:
 			else
 				mark = mark->right;
 		}
+		if (!mark)
+			throw std::exception("KeyError: key not found in tree.");
 		remove(mark);
 	}
 
+	/*	Given the address of a node, removes it from the tree.
+		Pre-cond: mark exists	*/
 	void remove(RedBlackNode *mark)
 	{
-		if (!mark)
-			throw std::exception("KeyError: key not found in tree.");
-
-		if (!mark->left) // TODO: fix for case when node to delete is root
+		if (!mark->left)
 		{	// mark might have a right child
 			mark->replaceWith(mark->right);
+			
+			if (mark == root && !mark->right)
+				// mark is root, and root has no children, which makes it the
+			    // last node in the tree
+				root = NULL;
+			
 			delete mark;
 		}
 		else if (!mark->right)
@@ -271,7 +281,7 @@ public:
 		}
 	}
 
-	Value* find(Key key) {}
+	Value* find(Key key) const {}
 
 	void clear()
 	{
@@ -293,15 +303,18 @@ public:
 
 	/*	Verifies the red-black properties of the tree. Returns true if all of 
 		the properties are maintained (making this a valid red-black tree).	*/
-	bool isRedBlackTree() 
+	bool isRedBlackTree() const
 	{ 
-		return root->isBlack && noSuccessiveReds() && goodBlackHeights();
+		if (root)
+			return root->isBlack && noSuccessiveReds() && goodBlackHeights();
+		else 
+			return true;
 	}
 
 	/*	Verifies the "no successive reds" property of the tree: if a node is
 		red, it's children must be black.
 		Returns true if the property is maintained.	*/
-	bool noSuccessiveReds()
+	bool noSuccessiveReds() const
 	{
 		bool inViolation = false;
 		noSuccessiveReds(root, inViolation);
@@ -310,7 +323,7 @@ public:
 
 	/*	Recursively verifies the "no successive reds" property of the tree.
 		Returns true if the property is violated.	*/
-	void noSuccessiveReds(RedBlackNode *t, bool &inViolation)
+	void noSuccessiveReds(RedBlackNode *t, bool &inViolation) const
 	{
 		if (!inViolation && t)
 		{
@@ -334,7 +347,7 @@ public:
 		simple paths from the node to descendent leaves contain the same
 		number of black nodes. 
 		Returns true if the property is maintained.	*/
-	bool goodBlackHeights()
+	bool goodBlackHeights() const
 	{
 		bool inViolation = false;
 		goodBlackHeights(root, inViolation);
@@ -343,7 +356,7 @@ public:
 
 	/*	Recursively verifies the black height property of the tree. 
 		Returns true if the property is violated.	*/
-	void goodBlackHeights(RedBlackNode *t, bool &inViolation)
+	void goodBlackHeights(RedBlackNode *t, bool &inViolation) const
 	{
 		if (!inViolation && t)
 		{
@@ -359,7 +372,7 @@ public:
 	
 	/*	Recursively measures the black height of the tree.
 		Returns height if consistent, -1 if not. */
-	int blackHeight(RedBlackNode *t)
+	int blackHeight(RedBlackNode *t) const
 	{
 		if (t)
 		{
@@ -385,11 +398,17 @@ public:
 
 	/*	Verifies the binary search property of the tree. 
 		Returns true if the property is maintained.	*/
-	bool isBinary() { return isBinary(root); }
+	bool isBinary() const
+	{ 
+		if (root)
+			return isBinary(root);
+		else 
+			return true;
+	}
 
 	/*	Recursively verifies the binary search property of the tree. 
 		Returns true of the property is maintained.	*/
-	bool isBinary(RedBlackNode *t)
+	bool isBinary(RedBlackNode *t) const
 	{
 		if (t)
 		{
@@ -406,11 +425,17 @@ public:
 	/*	Verifies the "connectedness" of the tree. That is, every child points 
 		back to its parent. 
 		Returns true if every node points back to its parent.	*/
-	bool isConnected() { return isConnected(root, NULL); }
+	bool isConnected() const 
+	{ 
+		if (root)
+			return isConnected(root, NULL);
+		else 
+			return true; 
+	}
 
 	/*	Verifies the "connectedness" of the tree.
 		Returns true if every node points back to its parent.	*/
-	bool isConnected(RedBlackNode *t, RedBlackNode *parent)
+	bool isConnected(RedBlackNode *t, RedBlackNode *parent) const
 	{
 		if (t)
 		{
@@ -424,11 +449,11 @@ public:
 
 	/*	Returns the depth of the tree. A tree of depth zero has one node. A 
 		tree of depth -1 is empty.	*/
-	int depth() { return depth(root); }
+	int depth() const { return depth(root); }
 
 	/*	Recursively measures the depth of the tree.
 		Returns the depth of the tree.	*/
-	int depth(RedBlackNode *t)
+	int depth(RedBlackNode *t) const
 	{
 		if (t)
 		{
