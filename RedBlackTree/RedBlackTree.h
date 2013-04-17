@@ -160,29 +160,29 @@ public:
 			(left ? parent->left : parent->right) = newNode;
 
 		// Perform local fixes to maintain red-black properties
-		localFixCase1(newNode);
+		insertFixCase1(newNode);
 	}
 
 	/*	Inserted at the root	*/
-	void localFixCase1(RedBlackNode *n)
+	void insertFixCase1(RedBlackNode *n)
 	{
 		if (n == root)
 			n->isBlack = true;
 		else
-			localFixCase2(n);
+			insertFixCase2(n);
 	}
 
 	/*	Parent is black, no problem.	*/
-	void localFixCase2(RedBlackNode *n)
+	void insertFixCase2(RedBlackNode *n)
 	{
 		if (n->parent->isBlack)
 			return;
 		else
-			localFixCase3(n);
+			insertFixCase3(n);
 	}
 
 	/* Parent and uncle are red.	*/
-	void localFixCase3(RedBlackNode *n)
+	void insertFixCase3(RedBlackNode *n)
 	{
 		RedBlackNode *u = n->uncle();
 		if (u != NULL && !u->isBlack)
@@ -191,14 +191,14 @@ public:
 			u->isBlack = true;
 			RedBlackNode *g = n->grandparent();
 			g->isBlack = false;
-			localFixCase1(g);
+			insertFixCase1(g);
 		}
 		else
-			localFixCase4(n);
+			insertFixCase4(n);
 	}
 
 	/* Parent is red, uncle is black, path from n to g is not straight */
-	void localFixCase4(RedBlackNode *n)
+	void insertFixCase4(RedBlackNode *n)
 	{
 		RedBlackNode *g = n->grandparent();
 		if (n == n->parent->right && n->parent == g->left)
@@ -211,11 +211,11 @@ public:
 			n->parent->rotateRight();
 			n = n->right;
 		}
-		localFixCase5(n);
+		insertFixCase5(n);
 	}
 
 	/* Parent is red, uncle is black, path from n to g is straight */
-	void localFixCase5(RedBlackNode *n)
+	void insertFixCase5(RedBlackNode *n)
 	{
 		RedBlackNode *g = n->grandparent();
 		n->parent->isBlack = true;
@@ -252,10 +252,12 @@ public:
 		Pre-cond: mark exists	*/
 	void remove(RedBlackNode *mark)
 	{
+		RedBlackNode *replacement = NULL;
+
 		if (!mark->left)
 		{	// mark might have a right child
-			mark->replaceWith(mark->right);
-			
+			replacement = mark->right;
+			mark->replaceWith(replacement);
 			if (mark == root && !mark->right)
 				// mark is root, and root has no children, which makes it the
 			    // last node in the tree
@@ -265,7 +267,8 @@ public:
 		}
 		else if (!mark->right)
 		{	// mark definitely has a left child
-			mark->replaceWith(mark->left);
+			replacement = mark->right;
+			mark->replaceWith(replacement);
 			delete mark;
 		}
 		else
@@ -279,6 +282,23 @@ public:
 			// remove successor
 			remove(s);
 		}
+		if (replacement)
+			removeFixCase1(replacement);
+	}
+
+	/*	Node to be spliced is red, and its child is black, no problem.	*/
+	void removeFixCase1(RedBlackNode *n)
+	{
+		RedBlackNode *child = n->left;
+		
+		if (n->isBlack)
+			removeFixCase2(n);
+	}
+
+	/*	Node to be spliced is black...	*/
+	void removeFixCase2(RedBlackNode *n)
+	{
+		
 	}
 
 	Value* find(Key key) const {}
