@@ -49,6 +49,16 @@ private:
 			return (parent == g->left ? g->right : g->left);
 		}
 
+		/*	Returns this node's sibling.
+			Pre-cond: Parent must exist	*/
+		Ptr sibling() const
+		{
+			if (this == parent->left)
+				return parent->right;
+			else
+				return parent->left;
+		}
+
 		/*	Finds and returns the left-most node from the right sub-tree.
 			Pre-cond: right child must exist.	*/
 		Ptr successor() const
@@ -252,24 +262,26 @@ public:
 		Pre-cond: mark exists	*/
 	void remove(RedBlackNode *mark)
 	{
-		RedBlackNode *replacement = NULL;
+		//RedBlackNode *replacement = NULL;
 
 		if (!mark->left)
 		{	// mark might have a right child
-			replacement = mark->right;
-			mark->replaceWith(replacement);
-			if (mark == root && !mark->right)
-				// mark is root, and root has no children, which makes it the
-			    // last node in the tree
-				root = NULL;
-			
-			delete mark;
+			//replacement = mark->right;
+			//mark->replaceWith(replacement);
+			//if (mark == root && !mark->right)
+			//	// mark is root, and root has no children, which makes it the
+			//    // last node in the tree
+			//	root = NULL;
+			//
+			//delete mark;
+			redBlackRemoval(mark, mark->right);
 		}
 		else if (!mark->right)
 		{	// mark definitely has a left child
-			replacement = mark->right;
+			/*replacement = mark->right;
 			mark->replaceWith(replacement);
-			delete mark;
+			delete mark;*/
+			redBlackRemoval(mark, mark->left);
 		}
 		else
 		{	// mark has two children
@@ -282,23 +294,49 @@ public:
 			// remove successor
 			remove(s);
 		}
-		if (replacement)
-			removeFixCase1(replacement);
+		/*if (replacement)
+			removeFixCase1(replacement);*/
+	}
+
+	void redBlackRemoval(RedBlackNode *m, RedBlackNode *c)
+	{
+		removeFixCase1(m, c);
 	}
 
 	/*	Node to be spliced is red, and its child is black, no problem.	*/
-	void removeFixCase1(RedBlackNode *n)
+	void removeFixCase1(RedBlackNode *m, RedBlackNode *c)
 	{
-		RedBlackNode *child = n->left;
-		
-		if (n->isBlack)
-			removeFixCase2(n);
+		if (m->isBlack)
+			removeFixCase2(m, c);
+		else
+		{	// m is red; it must have two leaf (NULL) children
+			// m can't be the root because it's red
+			m->replaceWith(c);
+			delete m;
+		}
 	}
 
-	/*	Node to be spliced is black...	*/
-	void removeFixCase2(RedBlackNode *n)
+	/*	Node to be spliced is black, child is red	*/
+	void removeFixCase2(RedBlackNode *m, RedBlackNode *c)
 	{
-		
+		if (!c || !c->isBlack)
+			// child is black
+			removeFixCase3(m, c);
+		else
+		{	// child is red
+			m->replaceWith(c);
+			delete m;
+			c->isBlack = true;
+		}
+	}
+
+	/*	Node to be spliced is black, child is black	*/
+	void removeFixCase3(RedBlackNode *m, RedBlackNode *c)
+	{
+		// node is black, children are leaves (NULL)
+		RedBlackNode *s = m->sibling();
+		m->replaceWith(c);
+
 	}
 
 	Value* find(Key key) const {}
