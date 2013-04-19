@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util.h" // util::swap
+#include <cassert>
 #include <exception>
 
 #ifndef NULL
@@ -26,6 +27,8 @@ private:
 			left(NULL), right(NULL), parent(parent)
 		{
 		}
+
+		bool isRed() { return !isBlack;	}
 
 		/*	Returns a reference to the parent's pointer to this node.
 			Pre-cond: Parent must exist.	*/
@@ -195,7 +198,7 @@ public:
 	void insertFixCase3(RedBlackNode *n)
 	{
 		RedBlackNode *u = n->uncle();
-		if (u != NULL && !u->isBlack)
+		if (u != NULL && u->isRed())
 		{
 			n->parent->isBlack = true;
 			u->isBlack = true;
@@ -262,28 +265,7 @@ public:
 		Pre-cond: mark exists	*/
 	void remove(RedBlackNode *mark)
 	{
-		//RedBlackNode *replacement = NULL;
-
-		if (!mark->left)
-		{	// mark might have a right child
-			//replacement = mark->right;
-			//mark->replaceWith(replacement);
-			//if (mark == root && !mark->right)
-			//	// mark is root, and root has no children, which makes it the
-			//    // last node in the tree
-			//	root = NULL;
-			//
-			//delete mark;
-			redBlackRemoval(mark, mark->right);
-		}
-		else if (!mark->right)
-		{	// mark definitely has a left child
-			/*replacement = mark->right;
-			mark->replaceWith(replacement);
-			delete mark;*/
-			redBlackRemoval(mark, mark->left);
-		}
-		else
+		if (mark->left && mark->right)
 		{	// mark has two children
 			RedBlackNode *s = mark->successor();
 			
@@ -291,52 +273,136 @@ public:
 			mark->key = s->key;
 			mark->value = s->value;
 
-			// remove successor
-			remove(s);
+			mark = s;
 		}
-		/*if (replacement)
-			removeFixCase1(replacement);*/
+
+		// mark has at most one non-leaf (non-null) child
+		redBlackRemoval(mark);
 	}
 
-	void redBlackRemoval(RedBlackNode *m, RedBlackNode *c)
-	{
-		removeFixCase1(m, c);
-	}
+	void redBlackRemoval(RedBlackNode *mark)
+	{	// mark has at most one non-null child
+		RedBlackNode *child = mark->left ? mark->left : mark->right;
 
-	/*	Node to be spliced is red, and its child is black, no problem.	*/
-	void removeFixCase1(RedBlackNode *m, RedBlackNode *c)
-	{
-		if (m->isBlack)
-			removeFixCase2(m, c);
+		if (!child)
+		{
+			removeFixCase1(mark);
+			if (mark == root)
+				root = NULL;
+		}
 		else
-		{	// m is red; it must have two leaf (NULL) children
-			// m can't be the root because it's red
-			m->replaceWith(c);
-			delete m;
+		{
+			mark->replaceWith(child);
+			if (mark->isBlack)
+			{
+				if (child->isRed())
+					child->isBlack = true;
+				else
+					// mark and child are both black
+					removeFixCase1(mark);
+			}
 		}
+		delete mark;
 	}
 
-	/*	Node to be spliced is black, child is red	*/
-	void removeFixCase2(RedBlackNode *m, RedBlackNode *c)
+	/* Mark is the new root */
+	void removeFixCase1(RedBlackNode *mark)
 	{
-		if (!c || !c->isBlack)
-			// child is black
-			removeFixCase3(m, c);
-		else
-		{	// child is red
-			m->replaceWith(c);
-			delete m;
-			c->isBlack = true;
+		if (mark->parent)
+			removeFixCase2(mark);
+	}
+
+	/* Sibling is red */
+	void removeFixCase2(RedBlackNode *mark)
+	{
+		RedBlackNode *sibling = mark->sibling();
+
+		if (sibling->isRed())
+		{
+			// swap the colors of sibling and parent
+			mark->parent->isBlack = false;
+			sibling->isBlack = true;
+
+			// rotate about the parent
+			if (mark == mark->parent->left)
+				mark->parent->rotateLeft();
+			else
+				mark->parent->rotateRight();
+
+			assert(sibling == mark->grandparent());
 		}
+		removeFixCase3(mark, sibling);
 	}
 
 	/*	Node to be spliced is black, child is black	*/
-	void removeFixCase3(RedBlackNode *m, RedBlackNode *c)
+	void removeFixCase3(RedBlackNode *mark, RedBlackNode *sibling)
 	{
-		// node is black, children are leaves (NULL)
-		RedBlackNode *s = m->sibling();
-		m->replaceWith(c);
+		bool childrenAreBlack;
+		bool leftIsBlack = !sibling->left || sibling->left->isBlack;
+		bool rightIsBlack = !sibling->right || sibling->right->isBlack;
+		childrenAreBlack = leftIsBlack && rightIsBlack;
 
+		if (mark->parent->isBlack && sibling->isBlack && childrenAreBlack)
+		{
+			sibling->isBlack = false;
+			removeFixCase1(mark->parent);
+		}
+		else
+			removeFixCase4(mark, sibling, childrenAreBlack);
+	}
+
+	void removeFixCase4(RedBlackNode *mark, RedBlackNode *sibling, 
+		bool childrenAreBlack)
+	{
+		if (mark->parent->isRed() && sibling->isBlack && childrenAreBlack)
+		{
+			sibling->isBlack = false;
+			mark->parent->isBlack = true;
+		}
+		else
+			removeFixCase5(mark, sibling);
+	}
+
+	void removeFixCase5(RedBlackNode *mark, RedBlackNode *sibling)
+	{
+		if (sibling->isBlack)
+		{
+			bool rightIsBlack = !sibling->right || sibling->right->isBlack;
+			bool leftIsRed = sibling->right && sibling->right->isRed();
+			if (mark == mark->parent->left && rightIsBlack && leftIsRed)
+			{
+				sibling->isBlack = false;
+				sibling->left->isBlack = true;
+				sibling->rotateRight();
+			}
+			else if (mark == mark->parent->right && !leftIsRed && 
+				sibling->right && sibling->right->isRed())
+			{
+				sibling->isBlack = false;
+				sibling->right->isBlack = true;
+				sibling->rotateLeft();
+			}
+		}
+		removeFixCase6(mark, sibling);
+	}
+
+	void removeFixCase6(RedBlackNode *mark, RedBlackNode *sibling)
+	{	// fixCase1 guarantees that mark->parent exists
+		sibling->isBlack = mark->parent->isBlack;
+		mark->parent->isBlack = true;
+
+		if (mark == mark->parent->left)
+		{
+			if (sibling->right)
+				sibling->right->isBlack = true;
+			mark->parent->rotateLeft();
+		}
+		else
+		{
+			if (sibling->left)
+				sibling->left->isBlack = true;
+			mark->parent->rotateLeft();
+		}
 	}
 
 	Value* find(Key key) const {}
@@ -385,10 +451,10 @@ public:
 	{
 		if (!inViolation && t)
 		{
-			if (!t->isBlack)
+			if (t->isRed())
 			{	
-				bool hasRedChild = t->left && !t->left->isBlack;
-				hasRedChild |=  t->right && !t->right->isBlack;
+				bool hasRedChild = t->left && t->left->isRed();
+				hasRedChild |=  t->right && t->right->isRed();
 				if (hasRedChild)
 				{	// t is red and has at least 1 red child
 					inViolation = true;
