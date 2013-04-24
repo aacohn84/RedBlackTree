@@ -248,14 +248,7 @@ public:
 	void remove(Key key) 
 	{
 		// find the node to be deleted
-		RedBlackNode *mark = root;
-		while (key != mark->key)
-		{
-			if (key < mark->key)
-				mark = mark->left;
-			else
-				mark = mark->right;
-		}
+		RedBlackNode *mark = find(key);
 		if (!mark)
 			throw std::exception("KeyError: key not found in tree.");
 		remove(mark);
@@ -413,7 +406,18 @@ public:
 			root = mark->grandparent();
 	}
 
-	Value* find(Key key) const {}
+	RedBlackNode* find(Key key) const 
+	{
+		RedBlackNode *mark = root;
+		while (mark && key != mark->key)
+		{
+			if (key < mark->key)
+				mark = mark->left;
+			else
+				mark = mark->right;
+		}
+		return mark;
+	}
 
 	void clear()
 	{
@@ -532,26 +536,28 @@ public:
 		Returns true if the property is maintained.	*/
 	bool isBinary() const
 	{ 
+		bool error = false;
 		if (root)
-			return isBinary(root);
-		else 
-			return true;
+			isBinary(root, error);
+		return !error;
 	}
 
 	/*	Recursively verifies the binary search property of the tree. 
 		Returns true of the property is maintained.	*/
-	bool isBinary(RedBlackNode *t) const
+	void isBinary(RedBlackNode *t, bool &error) const
 	{
-		if (t)
+		if (t && !error)
 		{
 			bool left_lt = !t->left || t->left && t->left->key < t->key;
 			bool right_gt = !t->right || t->right && t->right->key > t->key;
 			if (left_lt && right_gt)
-				return isBinary(t->left) && isBinary(t->right);
+			{
+				isBinary(t->left, error);
+				isBinary(t->right, error);
+			}
 			else
-				return false;
+				error = true;
 		}
-		return true;
 	}
 
 	/*	Verifies the "connectedness" of the tree. That is, every child points 
@@ -559,24 +565,26 @@ public:
 		Returns true if every node points back to its parent.	*/
 	bool isConnected() const 
 	{ 
+		bool error = false;
 		if (root)
-			return isConnected(root, NULL);
-		else 
-			return true; 
+			isConnected(root, NULL, error);
+		return !error; 
 	}
 
 	/*	Verifies the "connectedness" of the tree.
 		Returns true if every node points back to its parent.	*/
-	bool isConnected(RedBlackNode *t, RedBlackNode *parent) const
+	void isConnected(RedBlackNode *t, RedBlackNode *parent, bool &error) const
 	{
-		if (t)
+		if (t && !error)
 		{
 			if (parent != NULL && t->parent != parent)
-				return false;
-
-			return isConnected(t->left, t) && isConnected(t->right, t);
+				error = true;
+			else
+			{
+				isConnected(t->left, t, error);
+				isConnected(t->right, t, error);
+			}
 		}
-		return true;
 	}
 
 	/*	Returns the depth of the tree. A tree of depth zero has one node. A 
