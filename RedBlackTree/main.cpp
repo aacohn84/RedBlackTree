@@ -20,8 +20,9 @@ int main()
 		} catch (exception e) { e.what(); }
 	}*/
 
+	for (int i = 1; i <= 10; i++)
+		tree.insert(i, 2.0*i);
 	char choice;
-
 	do {
 		cout << "A)dd, R)emove, C)lear, Q)uit: "; cin >> choice;
 		switch (choice = tolower(choice))

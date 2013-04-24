@@ -277,32 +277,32 @@ public:
 		}
 
 		// mark has at most one non-leaf (non-null) child
-		redBlackRemoval(mark);
+		csaRedBlackRemoval(mark);
 	}
 
-	void redBlackRemoval(RedBlackNode *mark)
-	{	// mark has at most one non-null child
+	void csaRedBlackRemoval(RedBlackNode *mark)
+	{
 		RedBlackNode *child = mark->left ? mark->left : mark->right;
-
-		if (!child)
+		if (mark->isBlack)
 		{
-			removeFixCase1(mark);
-			if (mark == root)
-				root = NULL;
-		}
-		else
-		{
-			mark->replaceWith(child);
-			if (mark->isBlack)
+			if (child && child->isRed())
 			{
-				if (child->isRed())
-					child->isBlack = true;
-				else
-					// mark and child are both black
-					removeFixCase1(mark);
+				child->isBlack = true;
+				if (mark == root)
+					root = child;
 			}
+			else
+				doubleBlackFix(mark);
 		}
+		mark->replaceWith(child);
+		if (mark == root)
+			root = NULL;
 		delete mark;
+	}
+
+	void doubleBlackFix(RedBlackNode *mark)
+	{
+		removeFixCase1(mark);
 	}
 
 	/* Mark is the new root */
@@ -329,26 +329,31 @@ public:
 			else
 				mark->parent->rotateRight();
 
-			assert(sibling == mark->grandparent());
+			if (mark->parent == root)
+				root = mark->grandparent();
 		}
-		removeFixCase3(mark, sibling);
+		removeFixCase3(mark);
 	}
 
 	/*	Node to be spliced is black, child is black	*/
-	void removeFixCase3(RedBlackNode *mark, RedBlackNode *sibling)
+	void removeFixCase3(RedBlackNode *mark)
 	{
-		bool childrenAreBlack;
-		bool leftIsBlack = !sibling->left || sibling->left->isBlack;
-		bool rightIsBlack = !sibling->right || sibling->right->isBlack;
-		childrenAreBlack = leftIsBlack && rightIsBlack;
-
-		if (mark->parent->isBlack && sibling->isBlack && childrenAreBlack)
+		RedBlackNode *sibling = mark->sibling();
+		if (sibling)
 		{
-			sibling->isBlack = false;
-			removeFixCase1(mark->parent);
+			bool childrenAreBlack;
+			bool leftIsBlack = !sibling->left || sibling->left->isBlack;
+			bool rightIsBlack = !sibling->right || sibling->right->isBlack;
+			childrenAreBlack = leftIsBlack && rightIsBlack;
+
+			if (mark->parent->isBlack && sibling->isBlack && childrenAreBlack)
+			{
+				sibling->isBlack = false;
+				removeFixCase1(mark->parent);
+			}
+			else
+				removeFixCase4(mark, sibling, childrenAreBlack);
 		}
-		else
-			removeFixCase4(mark, sibling, childrenAreBlack);
 	}
 
 	void removeFixCase4(RedBlackNode *mark, RedBlackNode *sibling, 
@@ -368,7 +373,7 @@ public:
 		if (sibling->isBlack)
 		{
 			bool rightIsBlack = !sibling->right || sibling->right->isBlack;
-			bool leftIsRed = sibling->right && sibling->right->isRed();
+			bool leftIsRed = sibling->left && sibling->left->isRed();
 			if (mark == mark->parent->left && rightIsBlack && leftIsRed)
 			{
 				sibling->isBlack = false;
@@ -383,11 +388,12 @@ public:
 				sibling->rotateLeft();
 			}
 		}
-		removeFixCase6(mark, sibling);
+		removeFixCase6(mark);
 	}
 
-	void removeFixCase6(RedBlackNode *mark, RedBlackNode *sibling)
+	void removeFixCase6(RedBlackNode *mark)
 	{	// fixCase1 guarantees that mark->parent exists
+		RedBlackNode *sibling = mark->sibling();
 		sibling->isBlack = mark->parent->isBlack;
 		mark->parent->isBlack = true;
 
@@ -401,8 +407,10 @@ public:
 		{
 			if (sibling->left)
 				sibling->left->isBlack = true;
-			mark->parent->rotateLeft();
+			mark->parent->rotateRight();
 		}
+		if (mark->parent == root)
+			root = mark->grandparent();
 	}
 
 	Value* find(Key key) const {}
