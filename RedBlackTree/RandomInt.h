@@ -1,3 +1,9 @@
+/*
+	Author: Aaron Cohn
+
+	A class for generating random positive integers.
+*/
+
 #pragma once
 
 #include <vector>
@@ -11,12 +17,10 @@ private:
 	std::vector<int> *h;
 
 public:
-	RandomInt(void);
 	RandomInt(int min, int max);
 	int get();
 	static int get(int min, int max);
 	int getUnique();
-	int getUnique(int min, int max);
 	const std::vector<int>& history();
 	~RandomInt(void);
 };

@@ -1,6 +1,11 @@
+/*
+	Author: Aaron Cohn
+
+	A C++ template implementation of a Red-Black Tree
+*/
+
 #pragma once
 
-#include "util.h" // util::swap
 #include <cassert>
 #include <exception>
 
@@ -270,10 +275,10 @@ public:
 		}
 
 		// mark has at most one non-leaf (non-null) child
-		csaRedBlackRemoval(mark);
+		redBlackRemoval(mark);
 	}
 
-	void csaRedBlackRemoval(RedBlackNode *mark)
+	void redBlackRemoval(RedBlackNode *mark)
 	{
 		RedBlackNode *child = mark->left ? mark->left : mark->right;
 		if (mark->isBlack)

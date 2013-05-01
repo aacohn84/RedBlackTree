@@ -1,35 +1,60 @@
+/*
+	Author: Aaron Cohn
+	Date:	4/1/2013
+
+	This is the driver program for testing the red-black tree.
+*/
+
 #include <iostream>
 #include "RedBlackTree.h"
 #include "RandomInt.h"
 
 using namespace std;
 
-void printVec(const vector<int> &v)
-{
-	auto i = v.begin();
-	while (i != v.end())
-		cout << *(i++) << " ";
-	cout << endl;
-}
-
-void pressAnyKeyToQuit()
-{
-	while(isspace(cin.peek()))
-		cin.get();
-	cin.get();
-}
+void doRandomizedInsertsAndDeletes(RedBlackTree<int, double> &tree);
+void doManualTreeInteraction(RedBlackTree<int, double> &tree);
+void printVec(const vector<int> &v);
 
 int main()
 {
-	int numInts;
-	cout << "Number of random integers to insert: ";
-	cin >> numInts;
-
 	RedBlackTree<int, double> tree;
+	
+	char choice;
+	const char *message = 
+		"How would you like to interact with the red-black tree?\n"
+	    "R)andom insertions and deletions\n" 
+		"M)anually\n" 
+		"Q)uit ";
+	do 
+	{
+		std::cout << message;
+		cin >> choice;
+		switch (choice = tolower(choice))
+		{
+			case 'r': doRandomizedInsertsAndDeletes(tree); break;
+			case 'm': doManualTreeInteraction(tree); break;
+			case 'q': std::cout << "Bye!" << endl; break;
+			default:
+				std::cout << "Choice not recognized.";
+		}
+		tree.clear();
+	}
+	while (choice != 'q');
+
+	return 0;
+}
+
+void doRandomizedInsertsAndDeletes(RedBlackTree<int, double> &tree)
+{
+	int numInts;
+	cout << "Preparing to do randomized insertions and deletions.\n"
+			"How many random integers to use? ";
+	cin >> numInts;
+	
 	RandomInt keyGen(0, numInts * 2);
 	RandomInt indexGen(0, numInts - 1);
 
-	cout << "Generating random keys..." << endl;
+	cout << "\nGenerating random keys..." << endl;
 	int i;
 	for (i = 0; i < numInts; i++)
 	{
@@ -69,12 +94,17 @@ int main()
 	}
 
 	if (error)
-		cout << "There was a problem during the " << i << "th removal.";
+		cout << "There was a problem during the " << i << "th removal.\n";
 	else
-		cout << "No errors occurred.";
-	/*char choice;
+		cout << "No errors occurred.\n";
+	cout << endl;
+}
+
+void doManualTreeInteraction(RedBlackTree<int, double> &tree)
+{
+	char choice;
 	do {
-		cout << "A)dd, R)emove, C)lear, Q)uit: "; cin >> choice;
+		cout << "A)dd, D)elete, C)lear, R)eturn: "; cin >> choice;
 		switch (choice = tolower(choice))
 		{
 			int key;
@@ -83,7 +113,7 @@ int main()
 				cin >> key;
 				tree.insert(key, key * 2.0);
 				break;
-			case 'r':
+			case 'd':
 				cout << "Remove key: ";
 				cin >> key;
 				try { tree.remove(key); }
@@ -92,8 +122,9 @@ int main()
 			case 'c':
 				tree.clear();
 				break;
-			case 'q': 
-				break;
+			case 'r':
+				cout << endl;
+				return;
 			default:
 				cout << "Choice not recognized." << endl;
 		} 
@@ -105,8 +136,15 @@ int main()
 		cout << "Tree is " << (is_connected ? "" : "not ") << "connected." << endl;
 		cout << "Tree is " << (is_redblack ? "" : "not ") << "redblack." << endl;
 		cout << "Depth is " << tree.depth() << endl;
-	} while (choice != 'q');*/
+	} while (choice != 'r');
 	
-	pressAnyKeyToQuit();
-	return 0;
+	cout << endl;
+}
+
+void printVec(const vector<int> &v)
+{
+	auto i = v.begin();
+	while (i != v.end())
+		std::cout << *(i++) << " ";
+	std::cout << endl;
 }
